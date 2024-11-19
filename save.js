@@ -25,6 +25,15 @@ const supabaseUrl = process.env.PROJECT_URL;
 const supabaseKey = process.env.API_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+async function getPostbyID(id){
+    const {response, error} = await supabase
+        .from('posts')
+        .select('*')
+        .eq('post_id', id);
+    
+    console.log(response);
+}
+
 app.get('/', (req, res) => {
     // перенаправлення на реєстрацію або вхід через наявну сесію
     const username = req.session.username;  // змінна для перевірки сесії
@@ -52,6 +61,14 @@ app.get('/new', (req, res) => {
 // Отримуємо сторінку для реєстрації
 app.get('/register', (req, res) => {
     res.render('authorisation.ejs', { page: 'register', message: null, success: null });
+});
+
+app.get('/edit/:id', async (req, res) => {
+    const postIdentificator = req.params.post_id;
+    const editedPost = await getPostbyID(post);
+
+    console.log(editedPost);
+    res.redirect('form.ejs');
 });
 
 // Сторінка блогу
@@ -93,7 +110,9 @@ app.get('/blog', async (req, res) => {
             username: post.username,
             postDate: post.date,
             title: post.title,
-            description: post.description
+            description: post.description,
+            id: post.id,
+            post_id: post.post_id
         }));
 
         // Pass the posts array and username to the view
@@ -116,6 +135,21 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
     });
 });
+
+app.post('/delete', async(req, res) => {
+    const deletedOjectID = req.body.deleteItemId;
+    console.log(deletedOjectID);
+
+    try{
+        const {response, error} = await supabase
+        .from('posts')
+        .delete()
+        .eq('post_id', deletedOjectID)
+        res.redirect('/blog');}
+    catch(error){
+        console.log(error);
+    }
+})
 
 // авторизація та реєстрація
 app.post('/login', async (req, res) => {
@@ -290,7 +324,18 @@ app.post('/posts', async (req, res) => {
     }
 });
 
+// Handle form submission for editing a book
+app.post('/edit/:id', async (req, res) => {
+    const identificatorOFChosenPost= req.body.deleteItemId;
+    const { data, error } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('post_id', identificatorOFChosenPost)
+            .single();  
 
+    console.log(data);
+    res.render('form.ejs', {post: data});
+}); 
 
 // перевірка web status'а
 app.listen(port, () => {

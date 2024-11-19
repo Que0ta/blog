@@ -31,7 +31,10 @@
                         <h2 class="title"><%=post.title%></h2>
                         <p><%=post.description%></p>
                     </div>
-                    <a href="/edit"><img class="actionIcon fst" src="/images/edit.svg" /></a>
+                    <form action="/edit/<%= post.id %>" method="post">
+                        <button class="edit" onclick="this.form.submit()" name="deleteItemId" value="<%= post.post_id %>"><img class="actionIcon fst" src="/images/edit.svg" /></button>
+                    </form>
+                    
                     <form action="/delete" method="post">
                         <button class="delete" onclick="this.form.submit()" name="deleteItemId" value="<%= post.post_id %>"><img class="actionIcon snd" src="/images/delete.svg" /></button> 
                     </form>

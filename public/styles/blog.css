@@ -86,6 +86,13 @@ main .button:hover{
 }
 
 /* posts */
+.posts{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    flex-direction: column;
+}
 
 .item{
     position: relative;
@@ -99,7 +106,9 @@ main .button:hover{
     background: rgba(0, 0, 0, 0.79);
     border-radius: 13px;
     padding: 2.3rem 3rem;
-    margin: 3rem 8% 0 8%;
+    padding-bottom: 0;
+    margin-top: 3rem;
+    width: 800px;
 }
 
 .itemHead{
@@ -125,6 +134,14 @@ main .button:hover{
     height: 40px;
 
     filter: invert(1);
+    transition: 0.3s all linear;
+}
+
+.actionIcon:hover{
+    width: 45px;
+    height: 45px;
+    top: 37px;
+    transition: 0.3s all linear;
 }
 
 .fst{
@@ -137,4 +154,21 @@ main .button:hover{
     position: absolute;
     top: 40px;
     right: 40px;
+}
+
+@media (max-width: 1000px) {
+    .item{
+        width: 600px;
+    }
+
+}
+@media (max-width: 760px) {
+    .item{
+        width: 400px;
+    }
+
+}
+
+form button{
+    all: unset;
 }

@@ -25,6 +25,14 @@ const supabaseUrl = process.env.PROJECT_URL;
 const supabaseKey = process.env.API_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+async function getPostbyID(id){
+    const {response, error} = await supabase
+        .from('posts')
+        .select('*')
+        .eq('post_id', id);
+    // console.log(response);
+}
+
 app.get('/', (req, res) => {
     // перенаправлення на реєстрацію або вхід через наявну сесію
     const username = req.session.username;  // змінна для перевірки сесії
@@ -46,12 +54,20 @@ app.get('/login', (req, res) => {
 
 app.get('/new', (req, res) => {
     const username = req.session.username;  // юзера беремо з сесії
-    res.render('form.ejs', { post: false, username: username });
+    res.render('form.ejs', { post: false, username: username, pageStatus: "createPost" });
 });
 
 // Отримуємо сторінку для реєстрації
 app.get('/register', (req, res) => {
     res.render('authorisation.ejs', { page: 'register', message: null, success: null });
+});
+
+app.get('/edit/:id', async (req, res) => {
+    const postIdentificator = req.params.post_id;
+    const editedPost = await getPostbyID(post);
+
+    // console.log(editedPost);
+    res.redirect('form.ejs');
 });
 
 // Сторінка блогу
@@ -121,7 +137,6 @@ app.get('/logout', (req, res) => {
 
 app.post('/delete', async(req, res) => {
     const deletedOjectID = req.body.deleteItemId;
-    console.log(deletedOjectID);
 
     try{
         const {response, error} = await supabase
@@ -307,7 +322,35 @@ app.post('/posts', async (req, res) => {
     }
 });
 
+// Handle form submission for editing a book
+app.post('/edit/:id', async (req, res) => {
+    const identificatorOFChosenPost= req.body.deleteItemId;
+    const { data, error } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('post_id', identificatorOFChosenPost)
+            .single();  
 
+    res.render('form.ejs', {post: data, pageStatus: ''});
+}); 
+
+app.post('/editCurrent/:id', async (req, res) => {
+    const formInfo = req.body;
+
+    const date = new Date();
+
+    // Format the date
+    const day = date.getDate();
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const fullDate = "updated:  " + day + '.' + month + '.' + year;
+
+    const { data, error } = await supabase
+        .from('posts')
+        .update({ title: formInfo.title, description: formInfo.description, date: fullDate})
+        .eq('post_id', formInfo.id)
+    res.redirect('/blog');
+}); 
 
 // перевірка web status'а
 app.listen(port, () => {
