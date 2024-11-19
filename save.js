@@ -40,29 +40,71 @@ app.get('/', (req, res) => {
 
 // Отримуємо сторінку для логіну
 app.get('/login', (req, res) => {
-    res.render('authorisation.ejs', { page: 'login', message: null, success: null, username: 'resUser' });
+    res.render('authorisation.ejs', { page: 'login', message: null, success: null });
 });
 
+
 app.get('/new', (req, res) => {
-    res.render('form.ejs');
+    const username = req.session.username;  // юзера беремо з сесії
+    res.render('form.ejs', { post: false, username: username });
 });
 
 // Отримуємо сторінку для реєстрації
 app.get('/register', (req, res) => {
-    // Render the register page with no message initially
     res.render('authorisation.ejs', { page: 'register', message: null, success: null });
 });
 
 // Сторінка блогу
-app.get('/blog', (req, res) => {
+app.get('/blog', async (req, res) => {
     const username = req.session.username;
 
     if (!username) {
-        return res.redirect('/login'); // Перенаправлення, якщо користувач не ввійшов
+        return res.redirect('/login'); // Redirect if user is not logged in
     }
 
-    res.render('blog.ejs', { username });
+    try {
+        // Query the database to get the user ID based on the username
+        const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('username', username)
+            .single();
+
+        if (userError || !userData) {
+            console.error('Error fetching user data:', userError);
+            return res.redirect('/blog');
+        }
+
+        const userId = userData.id;  // Get the user ID from the query result
+
+        // Now select only the posts created by the logged-in user
+        const { data, error } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('id', userId); // Filter posts by the logged-in user's ID
+
+        if (error) {
+            console.error(error);
+            return res.redirect('/blog'); // Handle error (optional)
+        }
+
+        // Map the posts to the desired format
+        const posts = data.map(post => ({
+            username: post.username,
+            postDate: post.date,
+            title: post.title,
+            description: post.description
+        }));
+
+        // Pass the posts array and username to the view
+        res.render('blog.ejs', { username, posts });
+
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        res.status(500).send('Unexpected error');
+    }
 });
+
 
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
@@ -74,7 +116,6 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
     });
 });
-
 
 // авторизація та реєстрація
 app.post('/login', async (req, res) => {
@@ -189,6 +230,67 @@ app.post('/register', async (req, res) => {
         });
     }
 });
+
+// відправка форми
+app.post('/posts', async (req, res) => {
+    // Get data from the form
+    const { title, description } = req.body;
+    const usernameForm = req.session.username;  // Get username from session
+    const date = new Date();
+
+    // Format the date
+    const day = date.getDate();
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const fullDate = day + '.' + month + '.' + year; 
+
+    // Check if the user is logged in and fetch user ID
+    if (!usernameForm) {
+        return res.status(400).send('User is not logged in');
+    }
+
+    try {
+        // Query the database to get the user ID based on the username
+        const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('username', usernameForm)
+            .single();  // Assuming 'username' is unique
+
+        if (userError || !userData) {
+            console.error('Error fetching user data:', userError);
+            return res.status(500).send('Error fetching user data');
+        }
+
+        const userId = userData.id;  // Get the user ID from the query result
+
+        // Now insert the post into the 'posts' table, using the user ID
+        const { data, error } = await supabase
+            .from('posts')
+            .insert([
+                {
+                    username: usernameForm,
+                    date: fullDate,
+                    title: title,
+                    description: description,
+                    id: userId  // Use the user ID
+                }
+            ]);
+
+        if (error) {
+            console.error('Error inserting post:', error.message);
+            return res.status(500).send('Error inserting post');
+        }
+
+        // Redirect to the blog page after successful post creation
+        res.redirect('/blog');
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        res.status(500).send('Unexpected error');
+    }
+});
+
+
 
 // перевірка web status'а
 app.listen(port, () => {

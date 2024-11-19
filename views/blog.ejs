@@ -32,7 +32,10 @@
                         <p><%=post.description%></p>
                     </div>
                     <a href="/edit"><img class="actionIcon fst" src="/images/edit.svg" /></a>
-                    <a href="/delete"><img class="actionIcon snd" src="/images/delete.svg" /></a>
+                    <form action="/delete" method="post">
+                        <button class="delete" onclick="this.form.submit()" name="deleteItemId" value="<%= post.post_id %>"><img class="actionIcon snd" src="/images/delete.svg" /></button> 
+                    </form>
+                    <!-- <a href="/delete"><img class="actionIcon snd" src="/images/delete.svg" /></a> -->
                 </div>
                 <% }) %>
             </div>

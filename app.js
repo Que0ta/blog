@@ -93,7 +93,9 @@ app.get('/blog', async (req, res) => {
             username: post.username,
             postDate: post.date,
             title: post.title,
-            description: post.description
+            description: post.description,
+            id: post.id,
+            post_id: post.post_id
         }));
 
         // Pass the posts array and username to the view
@@ -116,6 +118,21 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
     });
 });
+
+app.post('/delete', async(req, res) => {
+    const deletedOjectID = req.body.deleteItemId;
+    console.log(deletedOjectID);
+
+    try{
+        const {response, error} = await supabase
+        .from('posts')
+        .delete()
+        .eq('post_id', deletedOjectID)
+        res.redirect('/blog');}
+    catch(error){
+        console.log(error);
+    }
+})
 
 // авторизація та реєстрація
 app.post('/login', async (req, res) => {
